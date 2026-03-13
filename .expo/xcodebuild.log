@@ -1,0 +1,6 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -workspace /Users/elgar/Desktop/PhilosopherChat/mobile/ios/PhilosopherChat.xcworkspace -configuration Debug -scheme PhilosopherChat -destination id=43AF9771-02D9-49B5-AF43-445223939B86
+
+User defaults from command line:
+    IDEPackageSupportUseBuiltinSCM = YES
+

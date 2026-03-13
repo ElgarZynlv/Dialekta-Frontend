@@ -1,0 +1,6 @@
+2026-03-13 17:45:37.083 xcodebuild[18169:112754] Writing error result bundle to /var/folders/z8/65cwshms5qbbwtkl9zpglp880000gn/T/ResultBundle_2026-13-03_17-45-0037.xcresult
+xcodebuild: error: Unable to find a destination matching the provided destination specifier:
+		{ id:43AF9771-02D9-49B5-AF43-445223939B86 }
+
+	Ineligible destinations for the "PhilosopherChat" scheme:
+		{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device, error:iOS 18.0 is not installed. To use with Xcode, first download and install the platform }
