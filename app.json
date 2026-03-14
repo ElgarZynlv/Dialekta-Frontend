@@ -30,7 +30,7 @@
       },
       "package": "com.elgarzeynalov.philosopherchat",
       "versionCode": 1,
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "favicon": "./assets/favicon.png"

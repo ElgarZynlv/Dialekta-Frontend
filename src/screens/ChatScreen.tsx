@@ -53,10 +53,9 @@ function PhilosopherAvatar({ philosopher, size }: { philosopher: Philosopher; si
     <View style={{ width: size, height: size, borderRadius: r, overflow: 'hidden' }}>
       {!imgError ? (
         <Image
-          source={{ uri: philosopher.image }}
+          source={philosopher.localImage}
           style={{ width: size, height: size, borderRadius: r }}
           contentFit="cover"
-          cachePolicy="disk"
           onError={() => setImgError(true)}
         />
       ) : (
@@ -427,7 +426,7 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
       {/* Thin accent separator */}
       <View style={{ height: 1, backgroundColor: philosopher.accentColor + '25' }} />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
