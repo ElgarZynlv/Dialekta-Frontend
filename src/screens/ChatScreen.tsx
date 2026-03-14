@@ -4,7 +4,11 @@ import {
   KeyboardAvoidingView, Platform, SafeAreaView, StatusBar,
   ActivityIndicator, Alert, Animated, Share, PanResponder,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
+import * as FileSystem from 'expo-file-system';
+import * as StoreReview from 'expo-store-review';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Philosopher } from '../constants/philosophers';
 import { ENDPOINTS } from '../constants/api';
@@ -21,6 +25,47 @@ interface Message {
 interface Props {
   philosopher: Philosopher;
   onBack: () => void;
+}
+
+const chatFilePath = (id: string) =>
+  FileSystem.documentDirectory + `chat_history_${id}.json`;
+
+const REVIEW_FILE = FileSystem.documentDirectory + 'msg_count.txt';
+
+async function maybeRequestReview() {
+  try {
+    const canReview = await StoreReview.isAvailableAsync();
+    if (!canReview) return;
+    const raw = await FileSystem.readAsStringAsync(REVIEW_FILE).catch(() => '0');
+    const count = parseInt(raw, 10) + 1;
+    await FileSystem.writeAsStringAsync(REVIEW_FILE, String(count));
+    if (count === 8) {
+      await StoreReview.requestReview();
+    }
+  } catch (_) {}
+}
+
+// Philosopher avatar — photo with gradient fallback
+function PhilosopherAvatar({ philosopher, size }: { philosopher: Philosopher; size: number }) {
+  const [imgError, setImgError] = useState(false);
+  const r = size / 2;
+  return (
+    <View style={{ width: size, height: size, borderRadius: r, overflow: 'hidden' }}>
+      {!imgError ? (
+        <Image
+          source={{ uri: philosopher.image }}
+          style={{ width: size, height: size, borderRadius: r }}
+          contentFit="cover"
+          cachePolicy="disk"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <LinearGradient colors={[philosopher.accentColor, philosopher.secondaryColor]} style={{ width: size, height: size, borderRadius: r, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: size * 0.4 }}>{philosopher.emoji}</Text>
+        </LinearGradient>
+      )}
+    </View>
+  );
 }
 
 // Pulsing online indicator
@@ -80,11 +125,46 @@ function TypingIndicator({ color }: { color: string }) {
   );
 }
 
+// Network error banner
+function NetworkErrorBanner({ message, onDismiss, theme }: {
+  message: string; onDismiss: () => void; theme: any;
+}) {
+  const slideY = useRef(new Animated.Value(-40)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(slideY, { toValue: 0, useNativeDriver: true, bounciness: 5, speed: 16 }),
+      Animated.timing(opacity, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const dismiss = () => {
+    Animated.parallel([
+      Animated.timing(slideY, { toValue: -40, duration: 180, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 0, duration: 180, useNativeDriver: true }),
+    ]).start(() => onDismiss());
+  };
+
+  return (
+    <Animated.View style={[
+      bannerStyles.container,
+      { backgroundColor: theme.surface, borderColor: '#E74C3C33', transform: [{ translateY: slideY }], opacity },
+    ]}>
+      <View style={bannerStyles.redDot} />
+      <Text style={[bannerStyles.text, { color: theme.textSub }]}>{message}</Text>
+      <TouchableOpacity onPress={dismiss} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <Text style={{ color: theme.textMuted, fontSize: 15, fontWeight: '600' }}>✕</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// Fade-in + slide-up on mount, long-press to share
+// Message bubble — fade-in + slide-up, long-press to share
 function MessageBubble({ message, philosopher, theme }: {
   message: Message; philosopher: Philosopher; theme: any;
 }) {
@@ -114,22 +194,37 @@ function MessageBubble({ message, philosopher, theme }: {
       ]}
     >
       {!isUser && (
-        <View style={[styles.avatar, { backgroundColor: philosopher.accentColor }]}>
-          <Text style={{ fontSize: 14 }}>{philosopher.emoji}</Text>
+        <View style={[styles.avatar, { borderColor: philosopher.accentColor + '50', borderWidth: 1.5 }]}>
+          <PhilosopherAvatar philosopher={philosopher} size={28} />
         </View>
       )}
       <View style={{ maxWidth: '85%' }}>
         <TouchableOpacity onLongPress={handleLongPress} delayLongPress={400} activeOpacity={0.85}>
-          <View style={[
-            styles.bubble,
-            isUser
-              ? { backgroundColor: theme.userBubbleBg, borderBottomRightRadius: 4 }
-              : { backgroundColor: theme.assistantBubbleBg, borderColor: philosopher.accentColor + '40', borderWidth: 1, borderBottomLeftRadius: 4 },
-          ]}>
-            <Text style={{ color: isUser ? theme.userBubbleText : theme.assistantBubbleText, fontSize: 15, lineHeight: 23 }}>
-              {message.content}
-            </Text>
-          </View>
+          {isUser ? (
+            <LinearGradient
+              colors={theme.isDark ? ['#FFFFFF', '#F0EEF8'] : ['#2C1F0E', '#1A0A05']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={[styles.bubble, { borderBottomRightRadius: 4 }]}
+            >
+              <Text style={{ color: theme.userBubbleText, fontSize: 15, lineHeight: 23 }}>
+                {message.content}
+              </Text>
+            </LinearGradient>
+          ) : (
+            <View style={[
+              styles.bubble,
+              {
+                backgroundColor: theme.assistantBubbleBg,
+                borderColor: philosopher.accentColor + '30',
+                borderWidth: 1,
+                borderBottomLeftRadius: 4,
+              },
+            ]}>
+              <Text style={{ color: theme.assistantBubbleText, fontSize: 15, lineHeight: 23 }}>
+                {message.content}
+              </Text>
+            </View>
+          )}
         </TouchableOpacity>
         <Text style={[styles.timestamp, { alignSelf: isUser ? 'flex-end' : 'flex-start', color: theme.textMuted }]}>
           {formatTime(message.timestamp)}
@@ -146,6 +241,8 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [networkError, setNetworkError] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const sendScale = useRef(new Animated.Value(1)).current;
@@ -169,10 +266,32 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
 
   useEffect(() => { scrollToBottom(); }, [messages, streamingText]);
 
+  // Load chat history from file, fall back to welcome message
   useEffect(() => {
-    const welcome = t.welcomeMessages[philosopher.id];
-    if (welcome) setMessages([{ id: '0', role: 'assistant', content: welcome, timestamp: new Date() }]);
-  }, [philosopher.id, language]);
+    setMessages([]);
+    setNetworkError(false);
+    FileSystem.readAsStringAsync(chatFilePath(philosopher.id))
+      .then(data => {
+        const saved: any[] = JSON.parse(data);
+        if (saved.length > 0) {
+          setMessages(saved.map(m => ({ ...m, timestamp: new Date(m.timestamp) })));
+        } else {
+          throw new Error('empty');
+        }
+      })
+      .catch(() => {
+        const welcome = t.welcomeMessages[philosopher.id];
+        if (welcome) {
+          setMessages([{ id: '0', role: 'assistant', content: welcome, timestamp: new Date() }]);
+        }
+      });
+  }, [philosopher.id]);
+
+  // Save chat history on every message change
+  useEffect(() => {
+    if (messages.length === 0) return;
+    FileSystem.writeAsStringAsync(chatFilePath(philosopher.id), JSON.stringify(messages)).catch(() => {});
+  }, [messages, philosopher.id]);
 
   const animateSend = () => {
     Animated.sequence([
@@ -185,6 +304,7 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
     const text = inputText.trim();
     if (!text || isLoading) return;
 
+    setNetworkError(false);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     animateSend();
 
@@ -218,7 +338,11 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
     };
 
     xhr.onload = () => {
-      if (fullText) setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: fullText, timestamp: new Date() }]);
+      if (fullText) {
+        setMessages(prev => [...prev, { id: Date.now().toString(), role: 'assistant', content: fullText, timestamp: new Date() }]);
+        setNetworkError(false);
+        maybeRequestReview();
+      }
       setStreamingText('');
       setIsLoading(false);
       xhrRef.current = null;
@@ -226,12 +350,12 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
 
     xhr.onerror = () => {
       setIsLoading(false); setStreamingText(''); xhrRef.current = null;
-      Alert.alert(t.connectionError, `${t.backendHint}`);
+      setNetworkError(true);
     };
 
     xhr.ontimeout = () => {
       setIsLoading(false); setStreamingText(''); xhrRef.current = null;
-      Alert.alert(t.connectionError, 'Request timed out.');
+      setNetworkError(true);
     };
 
     xhr.send(JSON.stringify({
@@ -244,29 +368,45 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
   const clearChat = useCallback(() => {
     Alert.alert(t.clearChatTitle, t.clearChatMessage, [
       { text: t.cancel, style: 'cancel' },
-      { text: t.clear, style: 'destructive', onPress: () => { xhrRef.current?.abort(); setMessages([]); setStreamingText(''); setIsLoading(false); } },
+      {
+        text: t.clear, style: 'destructive', onPress: () => {
+          xhrRef.current?.abort();
+          setStreamingText('');
+          setIsLoading(false);
+          setNetworkError(false);
+          FileSystem.deleteAsync(chatFilePath(philosopher.id), { idempotent: true }).catch(() => {});
+          const welcome = t.welcomeMessages[philosopher.id];
+          setMessages(welcome ? [{ id: Date.now().toString(), role: 'assistant', content: welcome, timestamp: new Date() }] : []);
+        },
+      },
     ]);
-  }, [t]);
+  }, [t, philosopher.id]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bg }} {...panResponder.panHandlers}>
       <StatusBar barStyle={theme.statusBar} />
 
       <LinearGradient
-        colors={theme.isDark ? [philosopher.accentColor + 'CC', theme.bg] : [philosopher.accentColor + '22', theme.bg]}
+        colors={theme.isDark
+          ? [philosopher.accentColor + 'BB', philosopher.secondaryColor + '55', theme.bg]
+          : [philosopher.accentColor + '28', philosopher.accentColor + '0A', theme.bg]}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
         style={styles.header}
       >
         <SafeAreaView>
           <View style={styles.headerRow}>
-            <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onBack(); }} style={styles.headerBtn}>
-              <Text style={{ color: theme.isDark ? 'rgba(255,255,255,0.9)' : philosopher.accentColor, fontSize: 15, fontWeight: '600' }}>
+            <TouchableOpacity
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onBack(); }}
+              style={styles.headerBtn}
+            >
+              <Text style={{ color: theme.isDark ? 'rgba(255,255,255,0.85)' : philosopher.accentColor, fontSize: 15, fontWeight: '600' }}>
                 {t.back}
               </Text>
             </TouchableOpacity>
+
             <View style={styles.headerCenter}>
-              <View style={[styles.headerAvatar, { backgroundColor: philosopher.accentColor }]}>
-                <Text style={{ fontSize: 20 }}>{philosopher.emoji}</Text>
+              <View style={[styles.headerAvatar, { borderColor: philosopher.accentColor + '60', borderWidth: 2, overflow: 'hidden' }]}>
+                <PhilosopherAvatar philosopher={philosopher} size={40} />
               </View>
               <View>
                 <Text style={{ color: theme.text, fontSize: 15, fontWeight: '700' }}>{philosopher.name}</Text>
@@ -276,6 +416,7 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
                 </View>
               </View>
             </View>
+
             <TouchableOpacity onPress={clearChat} style={[styles.headerBtn, { alignItems: 'flex-end' }]}>
               <Text style={{ color: theme.textSub, fontSize: 14 }}>{t.newChat}</Text>
             </TouchableOpacity>
@@ -283,7 +424,10 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
         </SafeAreaView>
       </LinearGradient>
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      {/* Thin accent separator */}
+      <View style={{ height: 1, backgroundColor: philosopher.accentColor + '25' }} />
+
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'android' ? 0 : 0}>
         <ScrollView
           ref={scrollRef}
           style={{ flex: 1 }}
@@ -292,12 +436,19 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
           onContentSizeChange={scrollToBottom}
           keyboardDismissMode="on-drag"
         >
+          {networkError && (
+            <NetworkErrorBanner
+              message={t.noConnection}
+              onDismiss={() => setNetworkError(false)}
+              theme={theme}
+            />
+          )}
+
           {messages.length === 0 && !isLoading && (
             <View style={styles.emptyState}>
-              {/* Philosopher info card */}
               <View style={[styles.philoCard, { backgroundColor: theme.surface, borderColor: philosopher.accentColor + '35' }]}>
-                <View style={[styles.philoCardAvatar, { backgroundColor: philosopher.accentColor }]}>
-                  <Text style={{ fontSize: 34 }}>{philosopher.emoji}</Text>
+                <View style={[styles.philoCardAvatar, { borderColor: philosopher.accentColor + '60', borderWidth: 2.5, overflow: 'hidden' }]}>
+                  <PhilosopherAvatar philosopher={philosopher} size={76} />
                 </View>
                 <Text style={{ color: theme.text, fontSize: 19, fontWeight: '800', marginTop: 12, marginBottom: 3 }}>{philosopher.name}</Text>
                 <Text style={{ color: theme.textSub, fontSize: 12 }}>{philosopher.era} · {philosopher.origin}</Text>
@@ -330,10 +481,10 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
 
           {isLoading && streamingText !== '' && (
             <View style={[styles.msgRow, styles.assistantRow]}>
-              <View style={[styles.avatar, { backgroundColor: philosopher.accentColor }]}>
-                <Text style={{ fontSize: 14 }}>{philosopher.emoji}</Text>
+              <View style={[styles.avatar, { borderColor: philosopher.accentColor + '50', borderWidth: 1.5, overflow: 'hidden' }]}>
+                <PhilosopherAvatar philosopher={philosopher} size={28} />
               </View>
-              <View style={[styles.bubble, { backgroundColor: theme.assistantBubbleBg, borderColor: philosopher.accentColor + '40', borderWidth: 1, borderBottomLeftRadius: 4, flex: 1 }]}>
+              <View style={[styles.bubble, { backgroundColor: theme.assistantBubbleBg, borderColor: philosopher.accentColor + '30', borderWidth: 1, borderBottomLeftRadius: 4, flex: 1 }]}>
                 <Text style={{ color: theme.assistantBubbleText, fontSize: 15, lineHeight: 23 }}>{streamingText}</Text>
                 <View style={{ marginTop: 8 }}><TypingIndicator color={philosopher.accentColor} /></View>
               </View>
@@ -342,10 +493,10 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
 
           {isLoading && streamingText === '' && (
             <View style={[styles.msgRow, styles.assistantRow]}>
-              <View style={[styles.avatar, { backgroundColor: philosopher.accentColor }]}>
-                <Text style={{ fontSize: 14 }}>{philosopher.emoji}</Text>
+              <View style={[styles.avatar, { borderColor: philosopher.accentColor + '50', borderWidth: 1.5, overflow: 'hidden' }]}>
+                <PhilosopherAvatar philosopher={philosopher} size={28} />
               </View>
-              <View style={[styles.bubble, { backgroundColor: theme.assistantBubbleBg, borderColor: philosopher.accentColor + '40', borderWidth: 1, borderBottomLeftRadius: 4, paddingVertical: 16 }]}>
+              <View style={[styles.bubble, { backgroundColor: theme.assistantBubbleBg, borderColor: philosopher.accentColor + '30', borderWidth: 1, borderBottomLeftRadius: 4, paddingVertical: 16 }]}>
                 <TypingIndicator color={philosopher.accentColor} />
               </View>
             </View>
@@ -354,10 +505,27 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
           <View style={{ height: 10 }} />
         </ScrollView>
 
-        <View style={{ backgroundColor: theme.bg, borderTopWidth: 1, borderTopColor: theme.border, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8 }}>
+        {/* Input bar */}
+        <BlurView
+          intensity={theme.isDark ? 60 : 40}
+          tint={theme.isDark ? 'dark' : 'light'}
+          style={[
+            styles.inputBar,
+            {
+              borderTopColor: inputFocused ? philosopher.accentColor + '60' : theme.border,
+            },
+          ]}
+        >
           <View style={styles.inputRow}>
             <TextInput
-              style={[styles.textInput, { backgroundColor: theme.inputBg, borderColor: theme.inputBorder, color: theme.text }]}
+              style={[
+                styles.textInput,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: inputFocused ? philosopher.accentColor + '70' : theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
               value={inputText}
               onChangeText={setInputText}
               placeholder={t.askPhilosopher}
@@ -367,29 +535,46 @@ export default function ChatScreen({ philosopher, onBack }: Props) {
               onSubmitEditing={sendMessage}
               returnKeyType="send"
               editable={!isLoading}
+              onFocus={() => setInputFocused(true)}
+              onBlur={() => setInputFocused(false)}
             />
-            <TouchableOpacity
-              onPress={sendMessage}
-              disabled={!inputText.trim() || isLoading}
-              activeOpacity={1}
-            >
+            <TouchableOpacity onPress={sendMessage} disabled={!inputText.trim() || isLoading} activeOpacity={1}>
               <Animated.View style={[styles.sendBtn, {
-                backgroundColor: inputText.trim() && !isLoading ? philosopher.accentColor : theme.surface,
                 transform: [{ scale: sendScale }],
               }]}>
-                {isLoading
-                  ? <ActivityIndicator size="small" color={philosopher.accentColor} />
-                  : <Text style={{ fontSize: 22, fontWeight: '700', color: inputText.trim() ? '#FFF' : theme.textMuted }}>↑</Text>
-                }
+                <LinearGradient
+                  colors={inputText.trim() && !isLoading
+                    ? [philosopher.accentColor, philosopher.secondaryColor]
+                    : [theme.surface, theme.surface]}
+                  style={[styles.sendBtnInner]}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                >
+                  {isLoading
+                    ? <ActivityIndicator size="small" color={philosopher.accentColor} />
+                    : <Text style={{ fontSize: 22, fontWeight: '700', color: inputText.trim() ? '#FFF' : theme.textMuted }}>↑</Text>
+                  }
+                </LinearGradient>
               </Animated.View>
             </TouchableOpacity>
           </View>
           <SafeAreaView />
-        </View>
+        </BlurView>
       </KeyboardAvoidingView>
     </View>
   );
 }
+
+const bannerStyles = StyleSheet.create({
+  container: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    borderRadius: 14, borderWidth: 1, padding: 12,
+    marginHorizontal: 16, marginBottom: 10,
+    shadowColor: '#E74C3C', shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12, shadowRadius: 10, elevation: 5,
+  },
+  redDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E74C3C' },
+  text: { flex: 1, fontSize: 13, lineHeight: 18 },
+});
 
 const styles = StyleSheet.create({
   header: { paddingBottom: 12 },
@@ -413,7 +598,10 @@ const styles = StyleSheet.create({
   timestamp: { fontSize: 10, marginTop: 3, marginBottom: 8, marginHorizontal: 6 },
   typingRow: { flexDirection: 'row', gap: 5, alignItems: 'center', height: 14 },
   typingDot: { width: 7, height: 7, borderRadius: 3.5 },
+
+  inputBar: { borderTopWidth: 1, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
-  textInput: { flex: 1, borderWidth: 1, borderRadius: 22, paddingHorizontal: 18, paddingVertical: 12, fontSize: 15, maxHeight: 120 },
-  sendBtn: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  textInput: { flex: 1, borderWidth: 1.5, borderRadius: 24, paddingHorizontal: 18, paddingVertical: 12, fontSize: 15, maxHeight: 120 },
+  sendBtn: { width: 46, height: 46 },
+  sendBtnInner: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
 });

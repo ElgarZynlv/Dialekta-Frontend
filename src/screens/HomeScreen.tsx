@@ -1,8 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ScrollView, Animated, StatusBar, SafeAreaView,
 } from 'react-native';
+import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { PHILOSOPHERS, Philosopher } from '../constants/philosophers';
@@ -17,6 +18,8 @@ interface Props {
 // Rich portrait for each philosopher
 function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
   const pulse = useRef(new Animated.Value(1)).current;
+  const [imgError, setImgError] = useState(false);
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -30,21 +33,32 @@ function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
     <View style={portrait.wrapper}>
       {/* Outer glow ring */}
       <Animated.View
-        style={[portrait.outerRing, { borderColor: philosopher.accentColor + '40', transform: [{ scale: pulse }] }]}
+        style={[portrait.outerRing, { borderColor: philosopher.accentColor + '50', transform: [{ scale: pulse }] }]}
       />
-      {/* Inner ring */}
-      <View style={[portrait.innerRing, { borderColor: philosopher.accentColor + '70' }]} />
-      {/* Center circle */}
-      <LinearGradient
-        colors={[philosopher.accentColor + 'EE', philosopher.secondaryColor]}
-        style={portrait.circle}
-      >
-        <Text style={portrait.emoji}>{philosopher.emoji}</Text>
-      </LinearGradient>
-      {/* Initial letter watermark */}
-      <Text style={[portrait.initial, { color: philosopher.accentColor + '20' }]}>
-        {philosopher.name[0]}
-      </Text>
+      {/* Inner accent ring */}
+      <View style={[portrait.innerRing, { borderColor: philosopher.accentColor + '80' }]} />
+
+      {/* Photo or fallback gradient */}
+      {!imgError ? (
+        <Image
+          source={philosopher.localImage}
+          style={portrait.photo}
+          contentFit="cover"
+          onError={() => setImgError(true)}
+        />
+      ) : (
+        <LinearGradient
+          colors={[philosopher.accentColor + 'EE', philosopher.secondaryColor]}
+          style={portrait.circle}
+        >
+          <Text style={portrait.emoji}>{philosopher.emoji}</Text>
+        </LinearGradient>
+      )}
+
+      {/* Emoji badge bottom-right */}
+      <View style={[portrait.badge, { backgroundColor: philosopher.accentColor }]}>
+        <Text style={{ fontSize: 10 }}>{philosopher.emoji}</Text>
+      </View>
     </View>
   );
 }
@@ -77,16 +91,23 @@ function PhilosopherCard({
       >
         <LinearGradient
           colors={theme.isDark
-            ? [philosopher.accentColor + 'CC', philosopher.secondaryColor, '#111111']
-            : [philosopher.accentColor + '22', philosopher.accentColor + '11', theme.card]}
+            ? [philosopher.accentColor + 'BB', philosopher.secondaryColor + '88', '#0F0F0F']
+            : [philosopher.accentColor + '18', philosopher.accentColor + '08', theme.card]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.card, { borderColor: philosopher.accentColor + (theme.isDark ? '30' : '40'), borderWidth: 1 }]}
+          style={[styles.card, { borderColor: philosopher.accentColor + (theme.isDark ? '28' : '35'), borderWidth: 1 }]}
         >
+          {/* Top accent stripe */}
+          <LinearGradient
+            colors={[philosopher.accentColor, philosopher.secondaryColor + 'AA', 'transparent']}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+            style={styles.accentStripe}
+          />
+
           <View style={styles.cardTop}>
             <PhilosopherPortrait philosopher={philosopher} />
             <View style={styles.cardTopRight}>
-              <View style={[styles.eraBadge, { backgroundColor: philosopher.accentColor + '25' }]}>
+              <View style={[styles.eraBadge, { backgroundColor: philosopher.accentColor + '20', borderColor: philosopher.accentColor + '40', borderWidth: 1 }]}>
                 <Text style={[styles.eraText, { color: philosopher.accentColor }]}>{philosopher.era}</Text>
               </View>
               <Text style={[styles.originText, { color: theme.textSub }]}>{philosopher.origin}</Text>
@@ -94,20 +115,25 @@ function PhilosopherCard({
           </View>
 
           <Text style={[styles.philosopherName, { color: theme.text }]}>{philosopher.name}</Text>
-          <Text style={[styles.tagline, { color: philosopher.accentColor + 'EE' }]}>
+          <Text style={[styles.tagline, { color: philosopher.accentColor + 'DD' }]}>
             {loc?.tagline ?? philosopher.tagline}
           </Text>
 
-          <View style={[styles.quoteContainer, { backgroundColor: theme.isDark ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.04)' }]}>
-            <Text style={[styles.quoteMark, { color: philosopher.accentColor + '50' }]}>"</Text>
-            <Text style={[styles.quote, { color: theme.isDark ? 'rgba(255,255,255,0.75)' : theme.textSub, fontFamily: 'Georgia' }]}>
+          {/* Glass quote box */}
+          <View style={[styles.quoteContainer, {
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+            borderColor: philosopher.accentColor + '20',
+            borderWidth: 1,
+          }]}>
+            <Text style={[styles.quoteMark, { color: philosopher.accentColor + '60' }]}>"</Text>
+            <Text style={[styles.quote, { color: theme.isDark ? 'rgba(255,255,255,0.7)' : theme.textSub, fontFamily: 'Georgia' }]}>
               {loc?.quote ?? philosopher.quote}
             </Text>
           </View>
 
           <View style={styles.topicsRow}>
             {(loc?.topics ?? philosopher.topics).slice(0, 3).map((topic) => (
-              <View key={topic} style={[styles.topicBadge, { borderColor: philosopher.accentColor + '60' }]}>
+              <View key={topic} style={[styles.topicBadge, { borderColor: philosopher.accentColor + '50', backgroundColor: philosopher.accentColor + '10' }]}>
                 <Text style={[styles.topicText, { color: philosopher.accentColor }]}>{topic}</Text>
               </View>
             ))}
@@ -115,8 +141,7 @@ function PhilosopherCard({
 
           <LinearGradient
             colors={[philosopher.accentColor, philosopher.secondaryColor]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.chatButton}
           >
             <Text style={styles.chatButtonText}>{t.beginConversation}</Text>
@@ -147,7 +172,7 @@ export default function HomeScreen({ onSelectPhilosopher, onOpenSettings }: Prop
         {/* Top bar */}
         <Animated.View style={[styles.topBar, { opacity: headerOpacity, borderBottomColor: theme.border }]}>
           <View style={{ width: 44 }} />
-          <Text style={[styles.topBarTitle, { color: theme.text }]}>🏛️ PhilosopherChat</Text>
+          <Text style={[styles.topBarTitle, { color: theme.text }]}>🏛️ Dialekta</Text>
           <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onOpenSettings(); }}>
             <Text style={styles.settingsBtnText}>⚙️</Text>
           </TouchableOpacity>
@@ -190,20 +215,25 @@ const portrait = StyleSheet.create({
   wrapper: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
   outerRing: {
     position: 'absolute', width: 72, height: 72,
-    borderRadius: 36, borderWidth: 1.5,
+    borderRadius: 36, borderWidth: 2,
   },
   innerRing: {
-    position: 'absolute', width: 62, height: 62,
-    borderRadius: 31, borderWidth: 1,
+    position: 'absolute', width: 64, height: 64,
+    borderRadius: 32, borderWidth: 1,
+  },
+  photo: {
+    width: 56, height: 56, borderRadius: 28,
   },
   circle: {
-    width: 54, height: 54, borderRadius: 27,
+    width: 56, height: 56, borderRadius: 28,
     alignItems: 'center', justifyContent: 'center',
   },
   emoji: { fontSize: 26 },
-  initial: {
-    position: 'absolute', fontSize: 52, fontWeight: '900',
-    right: -4, bottom: -8, zIndex: -1,
+  badge: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 20, height: 20, borderRadius: 10,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: 'rgba(0,0,0,0.3)',
   },
 });
 
@@ -235,6 +265,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4, shadowRadius: 14, elevation: 10,
   },
   card: { borderRadius: 20, padding: 20, overflow: 'hidden' },
+  accentStripe: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
   cardTop: {
     flexDirection: 'row', alignItems: 'flex-start',
     justifyContent: 'space-between', marginBottom: 14,

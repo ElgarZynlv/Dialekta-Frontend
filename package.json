@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
-    "canvas": "^3.2.1",
     "expo": "~52.0.0",
     "expo-blur": "~14.0.1",
+    "expo-file-system": "~18.0.12",
     "expo-haptics": "~14.0.0",
+    "expo-image": "~2.0.7",
     "expo-linear-gradient": "~14.0.1",
     "expo-status-bar": "~2.0.0",
+    "expo-store-review": "~8.0.1",
     "react": "18.3.1",
     "react-native": "0.76.9",
     "react-native-reanimated": "~3.16.1",
@@ -24,6 +26,7 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@types/react": "~18.3.12",
+    "canvas": "^3.2.1",
     "typescript": "^5.3.0"
   },
   "private": true

@@ -34,6 +34,7 @@ export interface Translations {
   clear: string;
   connectionError: string;
   backendHint: string;
+  noConnection: string;
   suggestedQuestion1: string;
   suggestedQuestion2: string;
   suggestedQuestion3: string;
@@ -101,6 +102,7 @@ const az: Translations = {
   clear: 'Sil',
   connectionError: 'Əlaqə xətası',
   backendHint: 'Backend serverinə qoşulmaq mümkün olmadı.\n\nBackend-in işlədiyinə əmin olun:\ncd backend && npm start',
+  noConnection: 'Əlaqə kəsildi. İnternet bağlantınızı yoxlayın.',
   suggestedQuestion1: 'Həyatın mənası nədir?',
   suggestedQuestion2: 'Yaxşı həyat necə yaşamalı?',
   suggestedQuestion3: 'Həqiqət nədir?',
@@ -115,7 +117,7 @@ const az: Translations = {
   backendDesc: 'Tətbiq lokal backend serverini tələb edir. Terminalda bu əmrləri yerinə yetirin:',
   backendRunning: 'Backend http://localhost:3001 ünvanında işləyir',
   aboutSection: 'ℹ️ Haqqında',
-  aboutDesc: 'PhilosopherChat tətbiqi tarixi filosofları simulyasiya etmək üçün adaptiv düşünmə ilə işləyir. Hər filosofun özünəməxsus unikal üslubu var.',
+  aboutDesc: 'Dialekta tətbiqi tarixi filosofları simulyasiya etmək üçün adaptiv düşünmə ilə işləyir. Hər filosofun özünəməxsus unikal üslubu var.',
   philosophersList: 'Filosoflar: Nietzsche · Kant · Tolstoy · Sokrat · Aristotel · Dekart',
   createdBy: 'Elgar Zeynalov tərəfindən yaradılıb',
   languageSection: '🌐 Dil',
@@ -194,6 +196,7 @@ const ru: Translations = {
   clear: 'Очистить',
   connectionError: 'Ошибка соединения',
   backendHint: 'Не удалось подключиться к серверу.\n\nУбедитесь, что сервер запущен:\ncd backend && npm start',
+  noConnection: 'Соединение прервано. Проверьте интернет.',
   suggestedQuestion1: 'В чём смысл жизни?',
   suggestedQuestion2: 'Как жить хорошей жизнью?',
   suggestedQuestion3: 'Что такое истина?',
@@ -208,7 +211,7 @@ const ru: Translations = {
   backendDesc: 'Приложение требует локальный сервер. Выполните эти команды в терминале:',
   backendRunning: 'Сервер работает на http://localhost:3001',
   aboutSection: 'ℹ️ О приложении',
-  aboutDesc: 'PhilosopherChat симулирует исторических философов с помощью адаптивного мышления. Каждый философ имеет уникальный стиль и голос.',
+  aboutDesc: 'Dialekta симулирует исторических философов с помощью адаптивного мышления. Каждый философ имеет уникальный стиль и голос.',
   philosophersList: 'Философы: Ницше · Кант · Толстой · Сократ · Аристотель · Декарт',
   createdBy: 'Создано Эльгаром Зейналовым',
   languageSection: '🌐 Язык',
@@ -287,6 +290,7 @@ const tr: Translations = {
   clear: 'Sil',
   connectionError: 'Bağlantı hatası',
   backendHint: 'Sunucuya bağlanılamadı.\n\nSunucunun çalıştığından emin olun:\ncd backend && npm start',
+  noConnection: 'Bağlantı kesildi. İnternet bağlantınızı kontrol edin.',
   suggestedQuestion1: 'Hayatın anlamı nedir?',
   suggestedQuestion2: 'İyi bir hayat nasıl yaşanır?',
   suggestedQuestion3: 'Gerçek nedir?',
@@ -301,7 +305,7 @@ const tr: Translations = {
   backendDesc: 'Uygulama yerel bir sunucu gerektirir. Terminalde şu komutları çalıştırın:',
   backendRunning: 'Sunucu http://localhost:3001 adresinde çalışıyor',
   aboutSection: 'ℹ️ Hakkında',
-  aboutDesc: 'PhilosopherChat, tarihi filozofları uyarlamalı düşünme ile simüle eder. Her filozofun kendine özgü benzersiz bir üslubu vardır.',
+  aboutDesc: 'Dialekta, tarihi filozofları uyarlamalı düşünme ile simüle eder. Her filozofun kendine özgü benzersiz bir üslubu vardır.',
   philosophersList: 'Filozoflar: Nietzsche · Kant · Tolstoy · Sokrates · Aristoteles · Descartes',
   createdBy: "Elgar Zeynalov tarafından oluşturuldu",
   languageSection: '🌐 Dil',
@@ -380,6 +384,7 @@ const en: Translations = {
   clear: 'Clear',
   connectionError: 'Connection Error',
   backendHint: 'Could not reach the backend server.\n\nMake sure the backend is running:\ncd backend && npm start',
+  noConnection: 'Connection lost. Check your internet connection.',
   suggestedQuestion1: 'What is the meaning of life?',
   suggestedQuestion2: 'How should I live a good life?',
   suggestedQuestion3: 'What is truth?',
@@ -394,7 +399,7 @@ const en: Translations = {
   backendDesc: 'This app requires a local backend server. Run these commands in your terminal:',
   backendRunning: 'The backend runs on http://localhost:3001',
   aboutSection: 'ℹ️ About',
-  aboutDesc: 'PhilosopherChat simulates historical philosophers using adaptive thinking. Each philosopher has a unique and authentic voice and style.',
+  aboutDesc: 'Dialekta simulates historical philosophers using adaptive thinking. Each philosopher has a unique and authentic voice and style.',
   philosophersList: 'Philosophers: Nietzsche · Kant · Tolstoy · Socrates · Aristotle · Descartes',
   createdBy: 'Created by Elgar Zeynalov',
   languageSection: '🌐 Language',

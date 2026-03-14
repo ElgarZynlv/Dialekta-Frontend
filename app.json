@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "PhilosopherChat",
+    "name": "Dialekta",
     "slug": "philosopher-chat",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "cover",
-      "backgroundColor": "#0D0820"
+      "backgroundColor": "#000000"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -19,20 +19,18 @@
       "bundleIdentifier": "com.elgarzeynalov.philosopherchat",
       "buildNumber": "1",
       "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        },
-        "CFBundleDisplayName": "PhilosopherChat",
+        "CFBundleDisplayName": "Dialekta",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D0820"
+        "backgroundColor": "#000000"
       },
       "package": "com.elgarzeynalov.philosopherchat",
-      "versionCode": 1
+      "versionCode": 1,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "favicon": "./assets/favicon.png"
