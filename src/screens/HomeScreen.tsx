@@ -15,7 +15,6 @@ interface Props {
   onOpenSettings: () => void;
 }
 
-// Rich portrait for each philosopher
 function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
   const pulse = useRef(new Animated.Value(1)).current;
   const [imgError, setImgError] = useState(false);
@@ -23,7 +22,7 @@ function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.08, duration: 2000, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.05, duration: 2000, useNativeDriver: true }),
         Animated.timing(pulse, { toValue: 1, duration: 2000, useNativeDriver: true }),
       ])
     ).start();
@@ -31,7 +30,7 @@ function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
 
   return (
     <View style={portrait.wrapper}>
-      {/* Outer glow ring */}
+      {/* Outer glow ring — smaller so pulse stays within wrapper bounds */}
       <Animated.View
         style={[portrait.outerRing, { borderColor: philosopher.accentColor + '50', transform: [{ scale: pulse }] }]}
       />
@@ -87,73 +86,75 @@ function PhilosopherCard({
     <Animated.View style={[
       styles.cardWrapper,
       { opacity, transform: [{ translateY }, { scale }] },
-      !theme.isDark && { shadowOpacity: 0.10, shadowRadius: 8, shadowColor: philosopher.accentColor },
     ]}>
-      <TouchableOpacity
-        activeOpacity={1}
-        onPress={onPress}
-        onPressIn={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 30, bounciness: 0 }).start(); }}
-        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 4 }).start()}
-      >
-        <LinearGradient
-          colors={theme.isDark
-            ? [philosopher.accentColor + 'BB', philosopher.secondaryColor + '88', '#0F0F0F']
-            : [philosopher.accentColor + '30', philosopher.secondaryColor + '18', theme.card]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.card, { borderColor: philosopher.accentColor + (theme.isDark ? '28' : '55'), borderWidth: 1 }]}
+      {/* Clip layer — fixes Android borderRadius overflow */}
+      <View style={[styles.cardClip, { borderColor: philosopher.accentColor + (theme.isDark ? '28' : '60') }]}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={onPress}
+          onPressIn={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 30, bounciness: 0 }).start(); }}
+          onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 20, bounciness: 4 }).start()}
         >
-          {/* Top accent stripe */}
           <LinearGradient
-            colors={[philosopher.accentColor, philosopher.secondaryColor + 'AA', philosopher.accentColor + '00']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.accentStripe}
-          />
-
-          <View style={styles.cardTop}>
-            <PhilosopherPortrait philosopher={philosopher} />
-            <View style={styles.cardTopRight}>
-              <View style={[styles.eraBadge, { backgroundColor: philosopher.accentColor + '20', borderColor: philosopher.accentColor + '40', borderWidth: 1 }]}>
-                <Text style={[styles.eraText, { color: philosopher.accentColor }]}>{philosopher.era}</Text>
-              </View>
-              <Text style={[styles.originText, { color: theme.textSub }]}>{philosopher.origin}</Text>
-            </View>
-          </View>
-
-          <Text style={[styles.philosopherName, { color: theme.text }]}>{philosopher.name}</Text>
-          <Text style={[styles.tagline, { color: philosopher.accentColor + 'DD' }]}>
-            {loc?.tagline ?? philosopher.tagline}
-          </Text>
-
-          {/* Glass quote box */}
-          <View style={[styles.quoteContainer, {
-            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : philosopher.accentColor + '0D',
-            borderColor: philosopher.accentColor + (theme.isDark ? '20' : '30'),
-            borderWidth: 1,
-          }]}>
-            <Text style={[styles.quoteMark, { color: philosopher.accentColor + '60' }]}>"</Text>
-            <Text style={[styles.quote, { color: theme.isDark ? 'rgba(255,255,255,0.7)' : theme.textSub, fontFamily: 'Georgia' }]}>
-              {loc?.quote ?? philosopher.quote}
-            </Text>
-          </View>
-
-          <View style={styles.topicsRow}>
-            {(loc?.topics ?? philosopher.topics).slice(0, 3).map((topic) => (
-              <View key={topic} style={[styles.topicBadge, { borderColor: philosopher.accentColor + '50', backgroundColor: philosopher.accentColor + '10' }]}>
-                <Text style={[styles.topicText, { color: philosopher.accentColor }]}>{topic}</Text>
-              </View>
-            ))}
-          </View>
-
-          <LinearGradient
-            colors={[philosopher.accentColor, philosopher.secondaryColor]}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={styles.chatButton}
+            colors={theme.isDark
+              ? [philosopher.accentColor + 'BB', philosopher.secondaryColor + '88', '#0F0F0F']
+              : [philosopher.accentColor + '55', philosopher.secondaryColor + '35', theme.card]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
           >
-            <Text style={styles.chatButtonText}>{t.beginConversation}</Text>
+            {/* Top accent stripe */}
+            <LinearGradient
+              colors={[philosopher.accentColor, philosopher.secondaryColor + 'AA', philosopher.accentColor + '00']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.accentStripe}
+            />
+
+            <View style={styles.cardTop}>
+              <PhilosopherPortrait philosopher={philosopher} />
+              <View style={styles.cardTopRight}>
+                <View style={[styles.eraBadge, { backgroundColor: philosopher.accentColor + '25', borderColor: philosopher.accentColor + '55', borderWidth: 1 }]}>
+                  <Text style={[styles.eraText, { color: philosopher.accentColor }]}>{philosopher.era}</Text>
+                </View>
+                <Text style={[styles.originText, { color: theme.textSub }]}>{philosopher.origin}</Text>
+              </View>
+            </View>
+
+            <Text style={[styles.philosopherName, { color: theme.text }]}>{philosopher.name}</Text>
+            <Text style={[styles.tagline, { color: philosopher.accentColor + 'DD' }]}>
+              {loc?.tagline ?? philosopher.tagline}
+            </Text>
+
+            {/* Glass quote box */}
+            <View style={[styles.quoteContainer, {
+              backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : philosopher.accentColor + '12',
+              borderColor: philosopher.accentColor + (theme.isDark ? '20' : '40'),
+              borderWidth: 1,
+            }]}>
+              <Text style={[styles.quoteMark, { color: philosopher.accentColor + '60' }]}>"</Text>
+              <Text style={[styles.quote, { color: theme.isDark ? 'rgba(255,255,255,0.7)' : theme.textSub, fontFamily: 'Georgia' }]}>
+                {loc?.quote ?? philosopher.quote}
+              </Text>
+            </View>
+
+            <View style={styles.topicsRow}>
+              {(loc?.topics ?? philosopher.topics).slice(0, 3).map((topic) => (
+                <View key={topic} style={[styles.topicBadge, { borderColor: philosopher.accentColor + '60', backgroundColor: philosopher.accentColor + '18' }]}>
+                  <Text style={[styles.topicText, { color: philosopher.accentColor }]}>{topic}</Text>
+                </View>
+              ))}
+            </View>
+
+            <LinearGradient
+              colors={[philosopher.accentColor, philosopher.secondaryColor]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={styles.chatButton}
+            >
+              <Text style={styles.chatButtonText}>{t.beginConversation}</Text>
+            </LinearGradient>
           </LinearGradient>
-        </LinearGradient>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </View>
     </Animated.View>
   );
 }
@@ -220,12 +221,12 @@ export default function HomeScreen({ onSelectPhilosopher, onOpenSettings }: Prop
 const portrait = StyleSheet.create({
   wrapper: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center' },
   outerRing: {
-    position: 'absolute', width: 72, height: 72,
-    borderRadius: 36, borderWidth: 2,
+    position: 'absolute', width: 66, height: 66,
+    borderRadius: 33, borderWidth: 2,
   },
   innerRing: {
-    position: 'absolute', width: 64, height: 64,
-    borderRadius: 32, borderWidth: 1,
+    position: 'absolute', width: 60, height: 60,
+    borderRadius: 30, borderWidth: 1,
   },
   photoWrapper: {
     width: 56, height: 56, borderRadius: 28, overflow: 'hidden',
@@ -273,8 +274,11 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4, shadowRadius: 14, elevation: 10,
   },
-  card: { borderRadius: 20, padding: 20, overflow: 'hidden' },
-  accentStripe: { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 20, borderTopRightRadius: 20 },
+  cardClip: {
+    borderRadius: 20, overflow: 'hidden', borderWidth: 1,
+  },
+  card: { padding: 20 },
+  accentStripe: { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
   cardTop: {
     flexDirection: 'row', alignItems: 'flex-start',
     justifyContent: 'space-between', marginBottom: 14,
@@ -293,8 +297,7 @@ const styles = StyleSheet.create({
 
   topicsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 16 },
   topicBadge: {
-    borderWidth: 1, borderRadius: 20, paddingHorizontal: 10,
-    paddingVertical: 4, backgroundColor: 'rgba(0,0,0,0.1)',
+    borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4,
   },
   topicText: { fontSize: 11, fontWeight: '600' },
 
