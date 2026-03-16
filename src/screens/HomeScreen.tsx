@@ -40,12 +40,14 @@ function PhilosopherPortrait({ philosopher }: { philosopher: Philosopher }) {
 
       {/* Photo or fallback gradient */}
       {!imgError ? (
-        <Image
-          source={philosopher.localImage}
-          style={portrait.photo}
-          contentFit="cover"
-          onError={() => setImgError(true)}
-        />
+        <View style={portrait.photoWrapper}>
+          <Image
+            source={philosopher.localImage}
+            style={portrait.photo}
+            contentFit="cover"
+            onError={() => setImgError(true)}
+          />
+        </View>
       ) : (
         <LinearGradient
           colors={[philosopher.accentColor + 'EE', philosopher.secondaryColor]}
@@ -82,7 +84,11 @@ function PhilosopherCard({
   const loc = t.philosophers[philosopher.id as keyof typeof t.philosophers];
 
   return (
-    <Animated.View style={[styles.cardWrapper, { opacity, transform: [{ translateY }, { scale }] }]}>
+    <Animated.View style={[
+      styles.cardWrapper,
+      { opacity, transform: [{ translateY }, { scale }] },
+      !theme.isDark && { shadowOpacity: 0.10, shadowRadius: 8, shadowColor: philosopher.accentColor },
+    ]}>
       <TouchableOpacity
         activeOpacity={1}
         onPress={onPress}
@@ -92,14 +98,14 @@ function PhilosopherCard({
         <LinearGradient
           colors={theme.isDark
             ? [philosopher.accentColor + 'BB', philosopher.secondaryColor + '88', '#0F0F0F']
-            : [philosopher.accentColor + '18', philosopher.accentColor + '08', theme.card]}
+            : [philosopher.accentColor + '30', philosopher.secondaryColor + '18', theme.card]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={[styles.card, { borderColor: philosopher.accentColor + (theme.isDark ? '28' : '35'), borderWidth: 1 }]}
+          style={[styles.card, { borderColor: philosopher.accentColor + (theme.isDark ? '28' : '55'), borderWidth: 1 }]}
         >
           {/* Top accent stripe */}
           <LinearGradient
-            colors={[philosopher.accentColor, philosopher.secondaryColor + 'AA', 'transparent']}
+            colors={[philosopher.accentColor, philosopher.secondaryColor + 'AA', philosopher.accentColor + '00']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={styles.accentStripe}
           />
@@ -121,8 +127,8 @@ function PhilosopherCard({
 
           {/* Glass quote box */}
           <View style={[styles.quoteContainer, {
-            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-            borderColor: philosopher.accentColor + '20',
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.04)' : philosopher.accentColor + '0D',
+            borderColor: philosopher.accentColor + (theme.isDark ? '20' : '30'),
             borderWidth: 1,
           }]}>
             <Text style={[styles.quoteMark, { color: philosopher.accentColor + '60' }]}>"</Text>
@@ -170,10 +176,10 @@ export default function HomeScreen({ onSelectPhilosopher, onOpenSettings }: Prop
       <StatusBar barStyle={theme.statusBar} backgroundColor={theme.bg} />
       <SafeAreaView style={{ flex: 1 }}>
         {/* Top bar */}
-        <Animated.View style={[styles.topBar, { opacity: headerOpacity, borderBottomColor: theme.border }]}>
+        <Animated.View style={[styles.topBar, { opacity: headerOpacity, borderBottomColor: theme.isDark ? theme.border : theme.borderStrong }]}>
           <View style={{ width: 44 }} />
           <Text style={[styles.topBarTitle, { color: theme.text }]}>🏛️ Dialekta</Text>
-          <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onOpenSettings(); }}>
+          <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.surface, borderColor: theme.isDark ? theme.border : theme.borderStrong }]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); onOpenSettings(); }}>
             <Text style={styles.settingsBtnText}>⚙️</Text>
           </TouchableOpacity>
         </Animated.View>
@@ -186,9 +192,9 @@ export default function HomeScreen({ onSelectPhilosopher, onOpenSettings }: Prop
 
           {/* Divider */}
           <View style={styles.divider}>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            <View style={[styles.dividerLine, { backgroundColor: theme.isDark ? theme.border : theme.borderStrong }]} />
             <Text style={[styles.dividerText, { color: theme.textMuted }]}>{t.choosePhilosopher}</Text>
-            <View style={[styles.dividerLine, { backgroundColor: theme.border }]} />
+            <View style={[styles.dividerLine, { backgroundColor: theme.isDark ? theme.border : theme.borderStrong }]} />
           </View>
 
           {/* Cards */}
@@ -221,8 +227,11 @@ const portrait = StyleSheet.create({
     position: 'absolute', width: 64, height: 64,
     borderRadius: 32, borderWidth: 1,
   },
+  photoWrapper: {
+    width: 56, height: 56, borderRadius: 28, overflow: 'hidden',
+  },
   photo: {
-    width: 56, height: 56, borderRadius: 28,
+    width: 56, height: 56,
   },
   circle: {
     width: 56, height: 56, borderRadius: 28,

@@ -5,3 +5,7 @@ build/
 *.log
 .DS_Store
 generate-logo.js
+ios/Pods/
+ios/build/
+android/build/
+android/.gradle/
